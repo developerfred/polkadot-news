@@ -1,50 +1,136 @@
-- name: Run Polkadot community analysis
-  env:
-    SUBSCAN_API_KEY: ${{ secrets.SUBSCAN_API_KEY }}
-    RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-    SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-    SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-  run: |
-    python polkadot_governance_integration.py --website-dir docs --output-dir data --debug --send-newsletter
+name: Daily Polkadot Community Newsletter
 
-- name: Debug output directories
-  run: |
-    echo "Checking output directories..."
-    echo "Contents of data directory:"
-    ls -la data/ || echo "data directory not found"
-    echo "Contents of polkadot_digest_output directory:"
-    ls -la polkadot_digest_output/ || echo "polkadot_digest_output directory not found"
-    echo "Contents of docs/newsletters before copying:"
-    ls -la docs/newsletters/ || echo "docs/newsletters directory not found"
+on:
+  schedule:
+    # Execute daily at 8:00 UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch:  # Enable manual execution
 
-- name: Copy newsletters to GitHub Pages directory
-  run: |
-    echo "Copying newsletters to GitHub Pages directory..."          
-    mkdir -p docs/newsletters
-    
-    # Try to find newsletters in various possible locations
-    if [ -d "polkadot_digest_output" ]; then
-      cp -v polkadot_digest_output/*.html docs/newsletters/ || echo "No HTML files found in polkadot_digest_output"
-      
-      latest=$(ls -t polkadot_digest_output/newsletter_*.html 2>/dev/null | head -1 || ls -t polkadot_digest_output/*.html 2>/dev/null | head -1)
-      if [ -n "$latest" ]; then
-        echo "Latest newsletter found: $latest"
-        cp -v "$latest" docs/newsletters/newsletter_latest.html
-      fi
-    elif [ -d "data/newsletters" ]; then
-      cp -v data/newsletters/*.html docs/newsletters/ || echo "No HTML files found in data/newsletters"
-      
-      latest=$(ls -t data/newsletters/newsletter_*.html 2>/dev/null | head -1 || ls -t data/newsletters/*.html 2>/dev/null | head -1)
-      if [ -n "$latest" ]; then
-        echo "Latest newsletter found: $latest"
-        cp -v "$latest" docs/newsletters/newsletter_latest.html
-      fi
-    fi
-    
-    # Create a simple HTML redirect for index if no markdown index exists yet
-    if [ ! -f "docs/newsletters/index.md" ]; then
-      echo "Creating HTML redirect for newsletters index..."
-      cat > docs/newsletters/index.html << EOL
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  generate-newsletter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install numpy pandas matplotlib seaborn nltk wordcloud resend supabase
+          pip install -e .
+
+      - name: Download NLTK data
+        run: |
+          python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
+
+      - name: Install Node.js dependencies
+        run: |
+          npm install -g @polkadot-api/client @polkadot-api/descriptors @polkadot-api/ws-provider @polkadot-api/polkadot-sdk-compat @polkadot-api/sdk-governance
+
+      - name: Create website directory structure
+        run: |
+          mkdir -p docs/reports
+          mkdir -p docs/newsletters
+          touch docs/.nojekyll  # Important: Add this to disable Jekyll processing
+          
+          # Create basic Jekyll configuration
+          cat > docs/_config.yml << EOL
+theme: jekyll-theme-minimal
+title: Polkadot Community Analysis
+description: Daily analysis of Polkadot community forum and on-chain governance
+exclude:
+  - node_modules/
+  - js_scripts/
+  - package.json
+  - package-lock.json
+  - "*.log"
+EOL
+
+      - name: Run Polkadot community analysis and generate newsletter
+        env:
+          SUBSCAN_API_KEY: ${{ secrets.SUBSCAN_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          # Create output directories
+          mkdir -p data
+          mkdir -p polkadot_digest_output
+          
+          # Run the correct command to generate the newsletter
+          python polkadot_community_digest.py newsletter
+          
+          # Also run the integration script for additional reports if needed
+          python polkadot_governance_integration.py --website-dir docs --output-dir data --debug
+
+      - name: Debug output directories
+        run: |
+          echo "Checking output directories..."
+          echo "Contents of data directory:"
+          ls -la data/ || echo "data directory not found"
+          echo "Contents of polkadot_digest_output directory:"
+          ls -la polkadot_digest_output/ || echo "polkadot_digest_output directory not found"
+          echo "Contents of docs/newsletters before copying:"
+          ls -la docs/newsletters/ || echo "docs/newsletters directory not found"
+
+      - name: Copy newsletters to GitHub Pages directory
+        run: |
+          echo "Copying newsletters to GitHub Pages directory..."          
+          mkdir -p docs/newsletters
+          
+          # Try to find newsletters in various possible locations
+          if [ -d "polkadot_digest_output" ]; then
+            echo "Looking for newsletters in polkadot_digest_output directory..."
+            cp -v polkadot_digest_output/*.html docs/newsletters/ || echo "No HTML files found in polkadot_digest_output"
+            
+            latest=$(ls -t polkadot_digest_output/newsletter_*.html 2>/dev/null | head -1 || ls -t polkadot_digest_output/*.html 2>/dev/null | head -1)
+            if [ -n "$latest" ]; then
+              echo "Latest newsletter found: $latest"
+              cp -v "$latest" docs/newsletters/newsletter_latest.html
+            else
+              echo "No newsletter found in polkadot_digest_output"
+            fi
+          elif [ -d "data/newsletters" ]; then
+            echo "Looking for newsletters in data/newsletters directory..."
+            cp -v data/newsletters/*.html docs/newsletters/ || echo "No HTML files found in data/newsletters"
+            
+            latest=$(ls -t data/newsletters/newsletter_*.html 2>/dev/null | head -1 || ls -t data/newsletters/*.html 2>/dev/null | head -1)
+            if [ -n "$latest" ]; then
+              echo "Latest newsletter found: $latest"
+              cp -v "$latest" docs/newsletters/newsletter_latest.html
+            else
+              echo "No newsletter found in data/newsletters"
+            fi
+          else
+            echo "Looking for any HTML files in current directory..."
+            find . -name "newsletter_*.html" | while read -r file; do
+              echo "Found newsletter: $file"
+              cp -v "$file" docs/newsletters/
+              cp -v "$file" docs/newsletters/newsletter_latest.html
+            done
+          fi
+          
+          # Create a simple HTML redirect for index
+          echo "Creating HTML redirect for newsletters index..."
+          cat > docs/newsletters/index.html << EOL
 <!DOCTYPE html>
 <html>
 <head>
@@ -56,67 +142,94 @@
 </body>
 </html>
 EOL
-    fi
-    
-    echo "Contents of docs/newsletters after copying:"
-    ls -la docs/newsletters/
+          
+          echo "Contents of docs/newsletters after copying:"
+          ls -la docs/newsletters/
 
-- name: Generate list of newsletters
-  run: |
-    echo "---" > docs/newsletters/index.md
-    echo "layout: default" >> docs/newsletters/index.md
-    echo "title: Polkadot Community Newsletters" >> docs/newsletters/index.md
-    echo "---" >> docs/newsletters/index.md
-    echo "" >> docs/newsletters/index.md
-    echo "# Polkadot Community Newsletters" >> docs/newsletters/index.md
-    echo "" >> docs/newsletters/index.md
-    echo "## Latest Newsletter" >> docs/newsletters/index.md
-    echo "" >> docs/newsletters/index.md
-    echo "* [Latest Newsletter](newsletter_latest.html) - $(date '+%Y-%m-%d')" >> docs/newsletters/index.md
-    echo "" >> docs/newsletters/index.md
-    
-    # Add Archive section listing newsletter files
-    echo "## Archive" >> docs/newsletters/index.md
-    echo "" >> docs/newsletters/index.md
-    
-    # List newsletters from newest to oldest
-    ls -t docs/newsletters/*.html | grep -v "latest" | while read -r file; do
-      filename=$(basename "$file")
-      date_part=$(echo "$filename" | grep -o "[0-9]\{8\}" || echo "Unknown")
-      if [ "$date_part" != "Unknown" ]; then
-        formatted_date=$(date -d "${date_part:0:4}-${date_part:4:2}-${date_part:6:2}" "+%Y-%m-%d" 2>/dev/null || echo "Unknown date")
-        echo "* [Newsletter $formatted_date]($filename) - $formatted_date" >> docs/newsletters/index.md
-      else
-        echo "* [Newsletter]($filename)" >> docs/newsletters/index.md
-      fi
-    done
+      - name: Generate list of newsletters
+        run: |
+          echo "---" > docs/newsletters/index.md
+          echo "layout: default" >> docs/newsletters/index.md
+          echo "title: Polkadot Community Newsletters" >> docs/newsletters/index.md
+          echo "---" >> docs/newsletters/index.md
+          echo "" >> docs/newsletters/index.md
+          echo "# Polkadot Community Newsletters" >> docs/newsletters/index.md
+          echo "" >> docs/newsletters/index.md
+          echo "## Latest Newsletter" >> docs/newsletters/index.md
+          echo "" >> docs/newsletters/index.md
+          echo "* [Latest Newsletter](newsletter_latest.html) - $(date '+%Y-%m-%d')" >> docs/newsletters/index.md
+          echo "" >> docs/newsletters/index.md
+          
+          # Add Archive section listing newsletter files
+          echo "## Archive" >> docs/newsletters/index.md
+          echo "" >> docs/newsletters/index.md
+          
+          # List newsletters from newest to oldest
+          ls -t docs/newsletters/*.html | grep -v "latest" | while read -r file; do
+            filename=$(basename "$file")
+            date_part=$(echo "$filename" | grep -o "[0-9]\{8\}" || echo "Unknown")
+            if [ "$date_part" != "Unknown" ]; then
+              formatted_date=$(date -d "${date_part:0:4}-${date_part:4:2}-${date_part:6:2}" "+%Y-%m-%d" 2>/dev/null || echo "Unknown date")
+              echo "* [Newsletter $formatted_date]($filename) - $formatted_date" >> docs/newsletters/index.md
+            else
+              echo "* [Newsletter]($filename)" >> docs/newsletters/index.md
+            fi
+          done
 
-# Generate list of reports...
+      - name: Generate list of reports
+        run: |
+          echo "---" > docs/reports/index.md
+          echo "layout: default" >> docs/reports/index.md
+          echo "title: Polkadot Community Reports" >> docs/reports/index.md
+          echo "---" >> docs/reports/index.md
+          echo "" >> docs/reports/index.md
+          echo "# Polkadot Community Reports" >> docs/reports/index.md
+          echo "" >> docs/reports/index.md
+          echo "## Latest Reports" >> docs/reports/index.md
+          echo "" >> docs/reports/index.md
+          echo "* [Latest Integrated Report](integrated_report_latest.md) - $(date '+%Y-%m-%d')" >> docs/reports/index.md
+          echo "* [Latest Forum Analysis](forum_analysis_latest.json) - $(date '+%Y-%m-%d')" >> docs/reports/index.md
+          echo "* [Latest Governance Analysis](governance_analysis_latest.json) - $(date '+%Y-%m-%d')" >> docs/reports/index.md
 
-- name: Verify newsletter files
-  run: |
-    echo "Checking newsletter files..."
-    ls -la docs/newsletters/
-    if [ -f "docs/newsletters/newsletter_latest.html" ]; then
-      echo "Newsletter file exists!"
-      head -n 20 docs/newsletters/newsletter_latest.html
-    else
-      echo "ERROR: Newsletter file does not exist!"
-    fi
+      - name: Verify newsletter files
+        run: |
+          echo "Checking newsletter files..."
+          ls -la docs/newsletters/
+          if [ -f "docs/newsletters/newsletter_latest.html" ]; then
+            echo "Newsletter file exists!"
+            head -n 20 docs/newsletters/newsletter_latest.html
+          else
+            echo "ERROR: Newsletter file does not exist!"
+            
+            # Last attempt to find any newsletter file
+            echo "Making one final attempt to find newsletter files..."
+            find . -name "*.html" | grep -i newsletter
+          fi
 
-- name: Commit and push changes
-  run: |
-    git config --global user.name "Polkadot Newsletter Bot"
-    git config --global user.email "bot@github.com"
-    
-    # Add data files
-    mkdir -p data
-    cp -r data/* . || echo "No data files to copy"
-    git add data || echo "No data files to add"
-    
-    # Add website files
-    git add docs
-    
-    # Commit and push
-    git commit -m "Daily newsletter update - $(date '+%Y-%m-%d')" || echo "No changes to commit"
-    git push || echo "No changes to push"
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "Polkadot Newsletter Bot"
+          git config --global user.email "bot@github.com"
+          
+          # Add data files
+          mkdir -p data
+          cp -r data/* . || echo "No data files to copy"
+          git add data || echo "No data files to add"
+          
+          # Add website files
+          git add docs
+          
+          # Commit and push
+          git commit -m "Daily newsletter update - $(date '+%Y-%m-%d')" || echo "No changes to commit"
+          git push || echo "No changes to push"
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v3
+        
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: 'docs'
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
