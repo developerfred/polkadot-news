@@ -1,104 +1,98 @@
-# Polkadot Community Analyzer
+# Polkadot Ecosystem Intelligence & Communication Platform
 
-This tool analyzes the Polkadot forum and on-chain governance proposals, generating integrated reports and newsletters with insights about community activity.
+A sophisticated framework for comprehensive analysis of the Polkadot discourse ecosystem, on-chain governance mechanisms, and strategic community engagement through curated periodic communications.
 
-## Features
+## Advanced Capabilities
 
-- **Forum Analysis**: Collects and analyzes data from the Polkadot forum
-- **Governance Analysis**: Analyzes on-chain referenda, treasury proposals, and bounties
-- **Integrated Reports**: Combines forum and governance insights into unified reports
-- **Automated Newsletters**: Creates newsletters with key community highlights
-- **Daily Updates**: Automatically generates reports daily via GitHub Actions
+- **Discourse Intelligence**: Methodically harvests and analyzes discourse patterns from the Polkadot forum, identifying salient discussion topics, community influencers, and emerging thematic trends
+- **Governance Analytics**: Conducts sophisticated analysis of on-chain governance mechanisms, including referendum proposals and treasury allocations
+- **Cross-Domain Synthesis**: Integrates forum discourse analytics with on-chain governance data to produce multidimensional intelligence reports
+- **Automated Communication Distribution**: Generates and disseminates elegant, responsive HTML communications to the stakeholder ecosystem
+- **Continuous Publication Framework**: Leverages GitHub Pages infrastructure for persistent availability of analytical products
+- **Stakeholder Relationship Management**: Orchestrates subscriber engagement through Supabase's enterprise-grade database infrastructure
 
-## Installation
+## Implementation Architecture
 
-### Prerequisites
+### System Requirements
 
-- Python 3.8 or higher
-- Node.js 16 or higher
+- Python 3.8+ runtime environment
+- Node.js 16+ JavaScript execution environment
+- Supabase account with appropriate access credentials (for stakeholder relationship management)
+- Resend account with API authorization (for communication distribution)
 
-### Setup
+### Installation
 
-1. Clone the repository
+1. Clone the repository:
    ```bash
    git clone https://github.com/yourusername/polkadot-community-analyzer.git
    cd polkadot-community-analyzer
    ```
 
-2. Install Python dependencies
+2. Install Python dependencies:
    ```bash
    pip install -r requirements.txt
    pip install -e .
    ```
 
-3. Install Node.js dependencies
+3. Install Node.js dependencies:
    ```bash
    npm install -g @polkadot-api/client @polkadot-api/descriptors @polkadot-api/ws-provider @polkadot-api/polkadot-sdk-compat @polkadot-api/sdk-governance
    ```
 
+4. Set up Supabase:
+   ```bash
+   export SUPABASE_URL="your-supabase-url"
+   export SUPABASE_KEY="your-supabase-key"
+   python supabase_setup.py
+   ```
+
+5. Set up environment variables:
+   ```bash
+   export RESEND_API_KEY="your-resend-api-key"
+   export SUBSCAN_API_KEY="your-subscan-api-key" # Optional
+   export SUPABASE_URL="your-supabase-url"
+   export SUPABASE_KEY="your-supabase-key"
+   ```
+
+### GitHub Actions Setup
+
+To use the GitHub Actions workflow for automated newsletters:
+
+1. Set up the following secrets in your GitHub repository:
+   - `RESEND_API_KEY`: Your Resend API key
+   - `SUBSCAN_API_KEY`: Your Subscan API key (optional)
+   - `SUPABASE_URL`: Your Supabase project URL
+   - `SUPABASE_KEY`: Your Supabase API key
+
+2. Enable GitHub Pages in your repository settings
+
 ## Usage
 
-### Basic usage
+### Running the Analyzer
+
+To run a complete analysis and generate a newsletter:
 
 ```bash
-python polkadot_governance_integration.py
+python polkadot_governance_integration.py --output-dir data --website-dir docs --send-newsletter
 ```
 
-### Command-line options
+### Configuration Parameters
 
-```
---output-dir        Output directory for reports (default: polkadot_analysis)
---rpc-endpoint      Polkadot RPC endpoint (default: wss://rpc.polkadot.io)
---subscan-key       Subscan API key
---forum-only        Analyze only the forum
---governance-only   Analyze only on-chain governance
---send-newsletter   Send newsletter with results
---recipients        Newsletter recipients (space-separated email addresses)
---website-dir       Directory for website output
---debug             Enable debug mode (detailed logs)
-```
+- `--output-dir`: Destination directory for analytical artifacts (default: `polkadot_analysis`)
+- `--website-dir`: Publication directory for web-accessible artifacts (GitHub Pages integration)
+- `--forum-only`: Restrict analysis to discourse intelligence module
+- `--governance-only`: Constrain execution to governance analytics module
+- `--send-newsletter`: Initiate stakeholder communication distribution
+- `--test-mode`: Execute in evaluation mode with limited distribution (single recipient)
+- `--debug`: Enable comprehensive diagnostic logging for system verification
 
-### Examples
+### Subscriber Management
 
-Analyze only the forum:
-```bash
-python polkadot_governance_integration.py --forum-only
-```
+You can manage subscribers using the Supabase dashboard or create API endpoints to handle subscriptions.
 
-Analyze governance and generate website files:
-```bash
-python polkadot_governance_integration.py --governance-only --website-dir docs
-```
+## Deployment
 
-Run complete analysis and send newsletter:
-```bash
-python polkadot_governance_integration.py --send-newsletter --recipients user@example.com user2@example.com
-```
-
-## GitHub Actions Integration
-
-This repository includes a GitHub Actions workflow that:
-
-1. Runs daily at 8:00 UTC
-2. Analyzes the Polkadot community forum and on-chain governance
-3. Generates integrated reports and newsletters
-4. Publishes results to GitHub Pages
-5. Archives historical data in the repository
-
-To set up:
-
-1. Fork this repository
-2. If needed, add your Subscan API key as a repository secret named `SUBSCAN_API_KEY`
-3. Enable GitHub Pages in repository settings, selecting the "GitHub Actions" source
-4. The workflow will run automatically daily, or you can trigger it manually
-
-## Website Structure
-
-The generated website includes:
-
-- **Home Page**: Latest integrated report
-- **Reports**: Current and archived analysis reports
-- **Newsletters**: HTML and markdown versions of daily newsletters
+The system is designed to be deployed as a GitHub Actions workflow that runs on a schedule. The included workflow runs daily and publishes results to GitHub Pages.
 
 ## License
 

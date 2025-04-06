@@ -2,9 +2,9 @@ name: Daily Polkadot Community Newsletter
 
 on:
   schedule:
-    # Run every day at 8:00 UTC
+    # Execute daily at 8:00 UTC
     - cron: '0 8 * * *'
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:  # Enable manual execution
 
 permissions:
   contents: write
@@ -34,7 +34,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install numpy pandas matplotlib seaborn nltk wordcloud
+          pip install numpy pandas matplotlib seaborn nltk wordcloud resend supabase
           pip install -e .
 
       - name: Download NLTK data
@@ -67,8 +67,11 @@ EOL
       - name: Run Polkadot community analysis
         env:
           SUBSCAN_API_KEY: ${{ secrets.SUBSCAN_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          python polkadot_governance_integration.py --website-dir docs --output-dir data --debug
+          python polkadot_governance_integration.py --website-dir docs --output-dir data --debug --send-newsletter
 
       - name: Generate list of newsletters
         run: |
@@ -145,23 +148,20 @@ EOL
           echo "Copying newsletters to GitHub Pages directory..."          
           mkdir -p docs/newsletters
           
-          
-          cp -v polkadot_digest_output/*.html docs/newsletters/ || echo "Nenhum arquivo HTML encontrado"
-          
+          cp -v polkadot_digest_output/*.html docs/newsletters/ || echo "No HTML files found"
           
           latest=$(ls -t polkadot_digest_output/newsletter_*.html 2>/dev/null | head -1 || ls -t polkadot_digest_output/*.html 2>/dev/null | head -1)
           if [ -n "$latest" ]; then
-            echo "Newsletter mais recente encontrada: $latest"
+            echo "Latest newsletter found: $latest"
             cp -v "$latest" docs/newsletters/newsletter_latest.html
           else
-            echo "Nenhuma newsletter encontrada na pasta de saída"
+            echo "No newsletter found in output directory"
           fi
           
-          
-          echo "Conteúdo de docs/newsletters:"
+          echo "Contents of docs/newsletters:"
           ls -la docs/newsletters/
 
-      - name: 
+      - name: Verify newsletter files
         run: |
           echo "Checking newsletter files..."
           ls -la docs/newsletters/

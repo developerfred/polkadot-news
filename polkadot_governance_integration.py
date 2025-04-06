@@ -1,6 +1,9 @@
 """
-Integration script to analyze the Polkadot forum and on-chain governance proposals,
-generating unified reports with comprehensive community insights.
+Integration Framework for Polkadot Ecosystem Analysis
+
+A sophisticated orchestration script that synthesizes analyses of the Polkadot forum discourse 
+and on-chain governance proposals. The system generates consolidated reports with 
+multidimensional community insights and distributes elegantly crafted newsletters.
 """
 
 import os
@@ -15,7 +18,6 @@ from typing import Dict, Any, List, Optional, Tuple, Union
 # Try to import forum analyzer modules
 try:
     from polkadot_community_analyzer import PolkadotCommunityAnalyzer
-    from polkadot_forum_mailer import PolkadotForumMailer
     forum_analyzer_available = True
 except ImportError:
     forum_analyzer_available = False
@@ -26,6 +28,13 @@ try:
     governance_analyzer_available = True
 except ImportError:
     governance_analyzer_available = False
+
+# Try to import newsletter mailer
+try:
+    from newsletter_mailer import NewsletterMailer
+    mailer_available = True
+except ImportError:
+    mailer_available = False
 
 # Logging configuration
 logging.basicConfig(
@@ -45,7 +54,10 @@ class PolkadotAnalyzerIntegration:
                  output_dir: str = "polkadot_analysis", 
                  rpc_endpoint: str = "wss://rpc.polkadot.io",
                  subscan_api_key: Optional[str] = None,
-                 website_dir: Optional[str] = None):
+                 website_dir: Optional[str] = None,
+                 resend_api_key: Optional[str] = None,
+                 supabase_url: Optional[str] = None,
+                 supabase_key: Optional[str] = None):
         """
         Initialize the analyzer integration.
         
@@ -54,6 +66,9 @@ class PolkadotAnalyzerIntegration:
             rpc_endpoint: RPC endpoint for connection to Polkadot network
             subscan_api_key: Optional API key for Subscan
             website_dir: Optional directory for website output
+            resend_api_key: Optional API key for Resend email service
+            supabase_url: Optional URL for Supabase database
+            supabase_key: Optional API key for Supabase database
         """
         self.output_dir = output_dir
         self.rpc_endpoint = rpc_endpoint
@@ -76,6 +91,7 @@ class PolkadotAnalyzerIntegration:
         # Initialize analyzers if available
         self.forum_analyzer = None
         self.governance_analyzer = None
+        self.newsletter_mailer = None
         
         if forum_analyzer_available:
             try:
@@ -95,6 +111,21 @@ class PolkadotAnalyzerIntegration:
                 logger.error(f"Error initializing governance analyzer: {str(e)}")
         else:
             logger.warning("Governance analyzer not available. Install the polkadot_governance_analyzer module.")
+            
+        # Initialize newsletter mailer if available
+        if mailer_available:
+            try:
+                self.newsletter_mailer = NewsletterMailer(
+                    resend_api_key=resend_api_key,
+                    supabase_url=supabase_url,
+                    supabase_key=supabase_key,
+                    from_email="Polkadot Newsletter <newsletter@polkadot-community.org>"
+                )
+                logger.debug("Newsletter mailer initialized successfully")
+            except Exception as e:
+                logger.error(f"Error initializing newsletter mailer: {str(e)}")
+        else:
+            logger.warning("Newsletter mailer not available. Install the newsletter_mailer module.")
 
     # Helper function to safely get values, regardless of format
     def safe_get(self, data, *keys, default=None):
@@ -144,12 +175,29 @@ class PolkadotAnalyzerIntegration:
             
             file_path = os.path.join(save_dir, full_filename)
             
-            # Convert NumPy types and save data
-            from numpy_json_utils import safe_json_dump
+            # Helper function to convert NumPy types to Python native types
+            def convert_numpy_types(obj):
+                import numpy as np
+                
+                if isinstance(obj, (np.integer, np.int64, np.int32, np.int16, np.int8)):
+                    return int(obj)
+                elif isinstance(obj, (np.floating, np.float64, np.float32, np.float16)):
+                    return float(obj)
+                elif isinstance(obj, np.ndarray):
+                    return obj.tolist()
+                elif isinstance(obj, (dict, dict)):
+                    return {k: convert_numpy_types(v) for k, v in obj.items()}
+                elif isinstance(obj, (list, tuple)):
+                    return [convert_numpy_types(item) for item in obj]
+                else:
+                    return obj
+            
+            # Convert data to ensure all NumPy types are converted to native Python types
+            data_converted = convert_numpy_types(data)
             
             # Save data
             with open(file_path, 'w', encoding='utf-8') as f:
-                safe_json_dump(data, f, indent=2)
+                json.dump(data_converted, f, indent=2, default=str)
             
             logger.debug(f"Data successfully saved to: {file_path}")
             return file_path
@@ -157,16 +205,15 @@ class PolkadotAnalyzerIntegration:
             logger.error(f"Error saving data to {filename}: {str(e)}")
             return None
     
-    
-    def _analyze_activity_timeline(self):
+    def _analyze_activity_timeline(self, posts):
         """Analyze activity over time"""
         # This requires timestamp data in posts
-        if not self.posts:
+        if not posts:
             return None
             
         # Try to extract timestamps from posts
         timestamps = []
-        for post in self.posts:
+        for post in posts:
             created_at = post.get("created_at")
             if created_at:
                 try:
@@ -178,24 +225,28 @@ class PolkadotAnalyzerIntegration:
         
         if not timestamps:
             return None
+        
+        try:
+            # Convert to pandas Series for easier analysis
+            import pandas as pd
+            series = pd.Series(timestamps)
             
-        # Convert to pandas Series for easier analysis
-        import pandas as pd
-        series = pd.Series(timestamps)
-        
-        # Group by day
-        daily_counts = series.dt.floor('D').value_counts().sort_index()
-        
-        # Convert to list of date-count pairs
-        timeline = []
-        for date, count in zip(daily_counts.index, daily_counts.values):
-            # Convert pandas Timestamp to string and NumPy values to Python native types
-            timeline.append({
-                "date": str(date),
-                "count": int(count)  # Convert numpy.int64 to Python int
-            })
-        
-        return timeline
+            # Group by day
+            daily_counts = series.dt.floor('D').value_counts().sort_index()
+            
+            # Convert to list of date-count pairs
+            timeline = []
+            for date, count in zip(daily_counts.index, daily_counts.values):
+                # Convert pandas Timestamp to string and NumPy values to Python native types
+                timeline.append({
+                    "date": str(date),
+                    "count": int(count)  # Convert numpy.int64 to Python int
+                })
+            
+            return timeline
+        except Exception as e:
+            logger.error(f"Error analyzing activity timeline: {str(e)}")
+            return None
 
     def run_forum_analysis(self) -> Dict[str, Any]:
         """Runs Polkadot forum analysis"""
@@ -219,16 +270,32 @@ class PolkadotAnalyzerIntegration:
             # Generate visualizations
             self.forum_analyzer.generate_visualizations()
             
-            # Convert any NumPy types (int64, float32, etc.) to standard Python types
-            from numpy_json_utils import convert_numpy_types, safe_json_dump
-            converted_report = convert_numpy_types(report)
-            
             # Save report
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_path = os.path.join(self.output_dir, f"forum_analysis_{timestamp}.json")
             
+            # Helper function to convert NumPy types to Python native types
+            def convert_numpy_types(obj):
+                import numpy as np
+                
+                if isinstance(obj, (np.integer, np.int64, np.int32, np.int16, np.int8)):
+                    return int(obj)
+                elif isinstance(obj, (np.floating, np.float64, np.float32, np.float16)):
+                    return float(obj)
+                elif isinstance(obj, np.ndarray):
+                    return obj.tolist()
+                elif isinstance(obj, dict):
+                    return {k: convert_numpy_types(v) for k, v in obj.items()}
+                elif isinstance(obj, (list, tuple)):
+                    return [convert_numpy_types(item) for item in obj]
+                else:
+                    return obj
+            
+            # Convert report to ensure all NumPy types are converted to native Python types
+            converted_report = convert_numpy_types(report)
+            
             with open(output_path, "w") as f:
-                safe_json_dump(report, f, indent=2)
+                json.dump(converted_report, f, indent=2, default=str)
             
             logger.info(f"Forum analysis completed. Report saved to {output_path}")
             
@@ -236,7 +303,7 @@ class PolkadotAnalyzerIntegration:
             if self.website_dir:
                 website_path = os.path.join(self.website_dir, "reports", f"forum_analysis_latest.json")
                 with open(website_path, "w") as f:
-                    safe_json_dump(report, f, indent=2)
+                    json.dump(converted_report, f, indent=2, default=str)
                 logger.info(f"Latest forum analysis copied to website: {website_path}")
             
             return converted_report
@@ -262,7 +329,7 @@ class PolkadotAnalyzerIntegration:
             if self.website_dir and analysis_results:
                 website_path = os.path.join(self.website_dir, "reports", "governance_analysis_latest.json")
                 with open(website_path, "w") as f:
-                    json.dump(analysis_results, f, indent=2)
+                    json.dump(analysis_results, f, indent=2, default=str)
                 logger.info(f"Latest governance analysis copied to website: {website_path}")
             
             logger.info("Governance analysis completed.")
@@ -276,13 +343,30 @@ class PolkadotAnalyzerIntegration:
     def generate_integrated_report(self, forum_data: Dict[str, Any], governance_data: Dict[str, Any]) -> str:
         """Generates an integrated report with forum and governance data"""
         
-        from numpy_json_utils import convert_numpy_types
-        
+        # Helper function to convert NumPy types to Python native types
+        def convert_numpy_types(obj):
+            try:
+                import numpy as np
+                
+                if isinstance(obj, (np.integer, np.int64, np.int32, np.int16, np.int8)):
+                    return int(obj)
+                elif isinstance(obj, (np.floating, np.float64, np.float32, np.float16)):
+                    return float(obj)
+                elif isinstance(obj, np.ndarray):
+                    return obj.tolist()
+                elif isinstance(obj, dict):
+                    return {k: convert_numpy_types(v) for k, v in obj.items()}
+                elif isinstance(obj, (list, tuple)):
+                    return [convert_numpy_types(item) for item in obj]
+                else:
+                    return obj
+            except ImportError:
+                # If numpy is not available, return the object as is
+                return obj
+                
         forum_data = convert_numpy_types(forum_data)
         governance_data = convert_numpy_types(governance_data)
         timestamp = datetime.now().strftime("%Y-%m-%d")
-        
-        
         
         # Initialize markdown content
         md_content = f"""
@@ -504,251 +588,7 @@ class PolkadotAnalyzerIntegration:
         
         logger.info(f"Integrated report generated at {output_file}")
         return output_file
-    
-    def create_newsletter(self, 
-                        forum_data: Dict[str, Any], 
-                        governance_data: Dict[str, Any],
-                        recipients: List[str] = None) -> Optional[str]:
-        """Creates a newsletter based on analyzed data and sends to recipients"""
-        if not forum_analyzer_available:
-            logger.error("Newsletter module not available")
-            return None
         
-        try:
-            # Generate integrated report as basis for newsletter
-            report_path = self.generate_integrated_report(forum_data, governance_data)
-            
-            # Check trending_keywords format and adapt as needed
-            trending_keywords = []
-            if forum_data and "trending_keywords" in forum_data and forum_data["trending_keywords"]:
-                try:
-                    sample_kw = forum_data["trending_keywords"][0]
-                    
-                    if isinstance(sample_kw, dict) and "word" in sample_kw and "count" in sample_kw:
-                        # Already in expected dictionary format
-                        trending_keywords = forum_data["trending_keywords"][:15]
-                    elif isinstance(sample_kw, tuple) and len(sample_kw) >= 2:
-                        # Convert from tuples to dictionaries
-                        trending_keywords = [{"word": kw[0], "count": kw[1]} 
-                                            for kw in forum_data["trending_keywords"][:15]]
-                    else:
-                        # Other format, try to adapt in the best possible way
-                        trending_keywords = [{"word": str(kw), "count": 1} 
-                                            for kw in forum_data["trending_keywords"][:15]]
-                except Exception as e:
-                    logger.warning(f"Error processing trending_keywords for newsletter: {str(e)}")
-            
-            # Prepare data for newsletter
-            newsletter_data = {
-                "title": f"Polkadot Community Digest - {datetime.now().strftime('%d/%m/%Y')}",
-                "date": datetime.now().strftime("%B %d, %Y"),
-                "community_summary": self._generate_community_summary(forum_data, governance_data),
-                "important_posts": self._extract_important_posts(forum_data),
-                "governance_proposals": self._extract_governance_proposals(governance_data),
-                "trending_keywords": trending_keywords
-            }
-            
-            # Create newsletter content
-            newsletter_content = self._format_newsletter_html(newsletter_data)
-            
-            # Save newsletter to output directory
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            newsletter_path = os.path.join(self.output_dir, f"newsletter_{timestamp}.html")
-            with open(newsletter_path, "w", encoding="utf-8") as f:
-                f.write(newsletter_content)
-            
-            # Save to website directory if available
-            if self.website_dir:
-                website_newsletter_path = os.path.join(self.website_dir, "newsletters", "newsletter_latest.html")
-                with open(website_newsletter_path, "w", encoding="utf-8") as f:
-                    f.write(newsletter_content)
-                
-                # Also create a markdown version for the website
-                md_newsletter_path = os.path.join(self.website_dir, "newsletters", "newsletter_latest.md")
-                md_content = self._format_newsletter_markdown(newsletter_data)
-                with open(md_newsletter_path, "w", encoding="utf-8") as f:
-                    # Add Jekyll front matter
-                    f.write("---\n")
-                    f.write("layout: default\n")
-                    f.write(f"title: {newsletter_data['title']}\n")
-                    f.write("---\n\n")
-                    f.write(md_content)
-                
-                logger.info(f"Latest newsletter saved to website: {website_newsletter_path}")
-            
-            # Create mailer if recipients are provided
-            if recipients and len(recipients) > 0:
-                try:
-                    mailer = PolkadotForumMailer()
-                    
-                    # Generate newsletter preview
-                    newsletter_preview = mailer.preview_newsletter(newsletter_content)
-                    
-                    # Send newsletter to recipients
-                    sent_count = 0
-                    for recipient in recipients:
-                        try:
-                            if mailer.send_email(recipient, newsletter_data["title"], newsletter_preview):
-                                sent_count += 1
-                        except Exception as e:
-                            logger.error(f"Error sending email to {recipient}: {str(e)}")
-                    
-                    logger.info(f"Newsletter sent to {sent_count} of {len(recipients)} recipients")
-                except Exception as e:
-                    logger.error(f"Error initializing mailer: {str(e)}")
-            
-            return newsletter_path
-            
-        except Exception as e:
-            logger.error(f"Error creating newsletter: {str(e)}")
-            traceback.print_exc()
-            return None
-    
-    def _format_newsletter_html(self, data: Dict[str, Any]) -> str:
-        """Formats newsletter data as HTML"""
-        html = f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>{data['title']}</title>
-    <style>
-        body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }}
-        h1, h2, h3 {{ color: #E6007A; }}
-        .section {{ margin-bottom: 30px; }}
-        .post {{ margin-bottom: 20px; padding: 15px; background-color: #f9f9f9; border-radius: 5px; }}
-        .post h3 {{ margin-top: 0; }}
-        .proposal {{ margin-bottom: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 5px; }}
-        .proposal h3 {{ margin-top: 0; }}
-        .keywords {{ display: flex; flex-wrap: wrap; }}
-        .keyword {{ margin: 5px; padding: 5px 10px; background-color: #E6007A; color: white; border-radius: 15px; }}
-        footer {{ margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 0.8em; color: #666; }}
-    </style>
-</head>
-<body>
-    <h1>{data['title']}</h1>
-    <p>{data['date']}</p>
-    
-    <div class="section">
-        <h2>Community Overview</h2>
-        <p>{data['community_summary']}</p>
-    </div>
-"""
-        
-        # Add important posts
-        if data['important_posts']:
-            html += """
-    <div class="section">
-        <h2>Hot Forum Topics</h2>
-"""
-            for post in data['important_posts'][:5]:
-                html += f"""
-        <div class="post">
-            <h3><a href="{post['url']}">{post['title']}</a></h3>
-            <p><strong>Author:</strong> {post['author']} | <strong>Views:</strong> {post['views']} | <strong>Replies:</strong> {post['replies']}</p>
-            <p>{post['summary']}</p>
-        </div>
-"""
-            html += """
-    </div>
-"""
-        
-        # Add governance proposals
-        if data['governance_proposals']:
-            html += """
-    <div class="section">
-        <h2>Governance Highlights</h2>
-"""
-            for proposal in data['governance_proposals']:
-                html += f"""
-        <div class="proposal">
-            <h3><a href="{proposal['url']}">{proposal['title']}</a></h3>
-            <p>{proposal['summary']}</p>
-        </div>
-"""
-            html += """
-    </div>
-"""
-        
-        # Add trending keywords
-        if data['trending_keywords']:
-            html += """
-    <div class="section">
-        <h2>Trending Keywords</h2>
-        <div class="keywords">
-"""
-            for kw in data['trending_keywords'][:10]:
-                word = kw.get('word', str(kw)) if isinstance(kw, dict) else kw[0] if isinstance(kw, tuple) else str(kw)
-                count = kw.get('count', 1) if isinstance(kw, dict) else kw[1] if isinstance(kw, tuple) else 1
-                html += f"""
-            <div class="keyword">{word} ({count})</div>
-"""
-            html += """
-        </div>
-    </div>
-"""
-        
-        # Add footer
-        html += f"""
-    <footer>
-        <p>This newsletter is automatically generated by the Polkadot Community Analyzer.</p>
-        <p>To unsubscribe or view online, visit: <a href="https://polkadot-community.github.io/newsletters/">https://polkadot-community.github.io/newsletters/</a></p>
-        <p>Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")}</p>
-    </footer>
-</body>
-</html>
-"""
-        return html
-    
-    def _format_newsletter_markdown(self, data: Dict[str, Any]) -> str:
-        """Formats newsletter data as Markdown for GitHub Pages"""
-        md = f"""# {data['title']}
-
-*{data['date']}*
-
-## Community Overview
-
-{data['community_summary']}
-
-"""
-        
-        # Add important posts
-        if data['important_posts']:
-            md += "## Hot Forum Topics\n\n"
-            for post in data['important_posts'][:5]:
-                md += f"### [{post['title']}]({post['url']})\n\n"
-                md += f"**Author:** {post['author']} | **Views:** {post['views']} | **Replies:** {post['replies']}\n\n"
-                md += f"{post['summary']}\n\n"
-            md += "---\n\n"
-        
-        # Add governance proposals
-        if data['governance_proposals']:
-            md += "## Governance Highlights\n\n"
-            for proposal in data['governance_proposals']:
-                md += f"### [{proposal['title']}]({proposal['url']})\n\n"
-                md += f"{proposal['summary']}\n\n"
-            md += "---\n\n"
-        
-        # Add trending keywords
-        if data['trending_keywords']:
-            md += "## Trending Keywords\n\n"
-            keywords = []
-            for kw in data['trending_keywords'][:10]:
-                word = kw.get('word', str(kw)) if isinstance(kw, dict) else kw[0] if isinstance(kw, tuple) else str(kw)
-                count = kw.get('count', 1) if isinstance(kw, dict) else kw[1] if isinstance(kw, tuple) else 1
-                keywords.append(f"**{word}** ({count})")
-            md += ", ".join(keywords) + "\n\n"
-            md += "---\n\n"
-        
-        # Add footer
-        md += f"""
----
-
-*This newsletter is automatically generated by the Polkadot Community Analyzer.*
-
-*Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")}*
-"""
-        return md
-    
     def _generate_community_summary(self, forum_data: Dict[str, Any], governance_data: Dict[str, Any]) -> str:
         """Generates a community activity summary for the newsletter"""
         summary = ""
@@ -767,7 +607,13 @@ class PolkadotAnalyzerIntegration:
                             categories.append(str(cat))
                 
                 if categories:
-                    summary += f"The Polkadot forum had high activity in the categories {', '.join(categories)}. "
+                    summary += f"The Polkadot community had high activity in the categories {', '.join(categories)}. "
+                
+                total_topics = len(forum_data.get("topics", []))
+                total_posts = len(forum_data.get("posts", []))
+                unique_users = len(forum_data.get("user_activity", {}))
+                
+                summary += f"The Polkadot forum had {total_topics} active topics with {total_posts} posts from {unique_users} distinct users. "
                 
                 hot_topics_count = len(forum_data.get("hot_topics", []))
                 summary += f"There are {hot_topics_count} hot topics currently under discussion. "
@@ -910,8 +756,324 @@ class PolkadotAnalyzerIntegration:
         
         return proposals[:5]  # Limit to 5 proposals total
     
-    def run_complete_analysis(self, send_newsletter: bool = False, recipients: List[str] = None) -> Dict[str, str]:
-        """Runs complete forum and governance analysis, generating integrated reports"""
+    def create_newsletter(self, 
+                          forum_data: Dict[str, Any], 
+                          governance_data: Dict[str, Any],
+                          test_mode: bool = False) -> Optional[str]:
+        """
+        Creates a newsletter based on analyzed data and sends it to subscribers
+        
+        Args:
+            forum_data: Analyzed forum data
+            governance_data: Analyzed governance data
+            test_mode: If True, send newsletter only to first subscriber
+            
+        Returns:
+            Path to the generated newsletter HTML file, or None if failed
+        """
+        if not mailer_available or not self.newsletter_mailer:
+            logger.error("Newsletter mailer not available")
+            return None
+        
+        try:
+            # Check trending_keywords format and adapt as needed
+            trending_keywords = []
+            if forum_data and "trending_keywords" in forum_data and forum_data["trending_keywords"]:
+                try:
+                    sample_kw = forum_data["trending_keywords"][0]
+                    
+                    if isinstance(sample_kw, dict) and "word" in sample_kw and "count" in sample_kw:
+                        # Already in expected dictionary format
+                        trending_keywords = forum_data["trending_keywords"][:15]
+                    elif isinstance(sample_kw, tuple) and len(sample_kw) >= 2:
+                        # Convert from tuples to dictionaries
+                        trending_keywords = [{"word": kw[0], "count": kw[1]} 
+                                            for kw in forum_data["trending_keywords"][:15]]
+                    else:
+                        # Other format, try to adapt in the best possible way
+                        trending_keywords = [{"word": str(kw), "count": 1} 
+                                            for kw in forum_data["trending_keywords"][:15]]
+                except Exception as e:
+                    logger.warning(f"Error processing trending_keywords for newsletter: {str(e)}")
+            
+            # Prepare data for newsletter
+            today = datetime.now().strftime("%B %d, %Y")
+            newsletter_data = {
+                "title": f"Polkadot Forum Digest - {today}",
+                "date": today,
+                "community_summary": self._generate_community_summary(forum_data, governance_data),
+                "important_posts": self._extract_important_posts(forum_data),
+                "governance_proposals": self._extract_governance_proposals(governance_data),
+                "trending_keywords": trending_keywords,
+                "unsubscribe_link": "#unsubscribe"
+            }
+            
+            # Generate newsletter HTML using template
+            html_content = self._generate_newsletter_html(newsletter_data)
+            
+            # Save newsletter to output directory
+            timestamp = datetime.now().strftime("%Y%m%d")
+            newsletter_path = os.path.join(self.output_dir, f"newsletter_{timestamp}.html")
+            with open(newsletter_path, "w", encoding="utf-8") as f:
+                f.write(html_content)
+            
+            logger.info(f"Newsletter HTML saved to {newsletter_path}")
+            
+            # Save to website directory if available
+            if self.website_dir:
+                website_path = os.path.join(self.website_dir, "newsletters", f"newsletter_{timestamp}.html")
+                latest_path = os.path.join(self.website_dir, "newsletters", "newsletter_latest.html")
+                
+                with open(website_path, "w", encoding="utf-8") as f:
+                    f.write(html_content)
+                
+                # Also save as latest.html
+                with open(latest_path, "w", encoding="utf-8") as f:
+                    f.write(html_content)
+                
+                logger.info(f"Newsletter copied to website: {website_path}")
+            
+            # Send newsletter to subscribers
+            subject = f"Polkadot Community Digest - {datetime.now().strftime('%Y-%m-%d')}"
+            results = self.newsletter_mailer.send_newsletter(subject, html_content, test_mode)
+            
+            if results['sent'] > 0:
+                logger.info(f"Newsletter sent to {results['sent']} subscribers (failed: {results['failed']})")
+            else:
+                logger.warning(f"No newsletters were sent to subscribers. Check for errors.")
+            
+            return newsletter_path
+            
+        except Exception as e:
+            logger.error(f"Error creating or sending newsletter: {str(e)}")
+            traceback.print_exc()
+            return None
+    
+    def _generate_newsletter_html(self, data: Dict[str, Any]) -> str:
+        """Generates HTML content for the newsletter"""
+        # Basic HTML template
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{data['title']}</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #E6007A;
+            padding-bottom: 10px;
+        }}
+        .logo {{
+            max-width: 150px;
+        }}
+        .date {{
+            color: #666;
+            font-style: italic;
+        }}
+        h1 {{
+            color: #E6007A;
+        }}
+        h2 {{
+            color: #172026;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-top: 25px;
+        }}
+        .post {{
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }}
+        .post-title {{
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }}
+        .post-meta {{
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }}
+        .post-summary {{
+            margin-bottom: 10px;
+        }}
+        .post-link {{
+            display: inline-block;
+            margin-top: 10px;
+            color: #E6007A;
+            text-decoration: none;
+            font-weight: bold;
+        }}
+        .post-link:hover {{
+            text-decoration: underline;
+        }}
+        .section {{
+            margin-bottom: 30px;
+        }}
+        .footer {{
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }}
+        .unsubscribe {{
+            color: #999;
+            font-size: 12px;
+        }}
+        .trending-keywords {{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }}
+        .keyword {{
+            background-color: #E6007A20;
+            color: #E6007A;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+        }}
+        .governance-item {{
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #ddd;
+        }}
+        .summary-box {{
+            background-color: #f0f0f0;
+            border-left: 4px solid #E6007A;
+            padding: 15px;
+            margin: 20px 0;
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{data['title']}</h1>
+        <p class="date">{data['date']}</p>
+    </div>
+
+    {self._render_community_summary_section(data)}
+    {self._render_trending_keywords_section(data)}
+    {self._render_important_posts_section(data)}
+    {self._render_governance_section(data)}
+
+    <div class="footer">
+        <p>Polkadot Forum Digest</p>
+        <p class="unsubscribe">If you no longer wish to receive these communications, <a href="{data['unsubscribe_link']}">click here to unsubscribe</a>.</p>
+    </div>
+</body>
+</html>"""
+        return html
+    
+    def _render_community_summary_section(self, data: Dict[str, Any]) -> str:
+        """Renders the community summary section of the newsletter"""
+        if not data.get('community_summary'):
+            return ""
+            
+        return f"""
+    <div class="section">
+        <h2>Community Summary</h2>
+        <div class="summary-box">
+            <p>{data['community_summary']}</p>
+        </div>
+    </div>
+    """
+    
+    def _render_trending_keywords_section(self, data: Dict[str, Any]) -> str:
+        """Renders the trending keywords section of the newsletter"""
+        if not data.get('trending_keywords'):
+            return ""
+            
+        keywords_html = ""
+        for kw in data['trending_keywords']:
+            word = kw.get('word', str(kw)) if isinstance(kw, dict) else kw[0] if isinstance(kw, tuple) else str(kw)
+            count = kw.get('count', 1) if isinstance(kw, dict) else kw[1] if isinstance(kw, tuple) else 1
+            keywords_html += f"""
+            <span class="keyword">{word} ({count})</span>
+            """
+            
+        return f"""
+    <div class="section">
+        <h2>Trending Topics</h2>
+        <div class="trending-keywords">
+            {keywords_html}
+        </div>
+    </div>
+    """
+    
+    def _render_important_posts_section(self, data: Dict[str, Any]) -> str:
+        """Renders the important posts section of the newsletter"""
+        if not data.get('important_posts'):
+            return ""
+            
+        posts_html = ""
+        for post in data['important_posts']:
+            posts_html += f"""
+        <div class="post">
+            <div class="post-title">{post['title']}</div>
+            <div class="post-meta">
+                By <strong>{post['author']}</strong> on {post['date']} | 
+                {post['views']} views | {post['replies']} replies
+            </div>
+            <div class="post-summary">{post['summary']}</div>
+            <a href="{post['url']}" class="post-link">Read more »</a>
+        </div>
+        """
+            
+        return f"""
+    <div class="section">
+        <h2>Key Posts of the Week</h2>
+        {posts_html}
+    </div>
+    """
+    
+    def _render_governance_section(self, data: Dict[str, Any]) -> str:
+        """Renders the governance proposals section of the newsletter"""
+        if not data.get('governance_proposals'):
+            return ""
+            
+        proposals_html = ""
+        for proposal in data['governance_proposals']:
+            proposals_html += f"""
+        <div class="governance-item">
+            <div class="post-title">{proposal['title']}</div>
+            <div class="post-meta">Created on {proposal['date']} | {proposal['views']} views</div>
+            <div class="post-summary">{proposal['summary']}</div>
+            <a href="{proposal['url']}" class="post-link">View complete proposal »</a>
+        </div>
+        """
+            
+        return f"""
+    <div class="section">
+        <h2>Active Governance Proposals</h2>
+        {proposals_html}
+    </div>
+    """
+    
+    def run_complete_analysis(self, send_newsletter: bool = False, test_mode: bool = False) -> Dict[str, str]:
+        """
+        Runs complete forum and governance analysis, generating integrated reports and newsletters
+        
+        Args:
+            send_newsletter: Whether to send the newsletter to subscribers
+            test_mode: If True, send newsletter only to the first subscriber
+            
+        Returns:
+            Dict with paths to generated reports and newsletters
+        """
         results = {}
         
         # Analyze forum data
@@ -926,7 +1088,7 @@ class PolkadotAnalyzerIntegration:
                         self.output_dir, 
                         f"forum_analysis_{timestamp}.json"
                     )
-                    logger.info(f"Forum analysis completed successfully. Results in {results['forum_analysis']}")
+                    logger.info(f"Forum analysis completed successfully.")
             except Exception as e:
                 logger.error(f"Error during forum analysis: {str(e)}")
                 traceback.print_exc()
@@ -946,7 +1108,7 @@ class PolkadotAnalyzerIntegration:
                         "governance", 
                         f"governance_analysis_{timestamp}.json"
                     )
-                    logger.info(f"Governance analysis completed successfully. Results in {results['governance_analysis']}")
+                    logger.info(f"Governance analysis completed successfully.")
             except Exception as e:
                 logger.error(f"Error during governance analysis: {str(e)}")
                 traceback.print_exc()
@@ -961,7 +1123,7 @@ class PolkadotAnalyzerIntegration:
                 integrated_report = self.generate_integrated_report(forum_data, governance_data)
                 if integrated_report:
                     results["integrated_report"] = integrated_report
-                    logger.info(f"Integrated report generated successfully: {integrated_report}")
+                    logger.info(f"Integrated report generated successfully.")
             except Exception as e:
                 logger.error(f"Error generating integrated report: {str(e)}")
                 traceback.print_exc()
@@ -969,114 +1131,17 @@ class PolkadotAnalyzerIntegration:
             logger.warning("No data available to generate integrated report")
         
         # Create and send newsletter, if requested
-        if send_newsletter and recipients and len(recipients) > 0:
+        if (send_newsletter or test_mode) and (forum_data or governance_data) and mailer_available and self.newsletter_mailer:
             try:
-                logger.info(f"Creating newsletter for {len(recipients)} recipients...")
-                newsletter_path = self.create_newsletter(forum_data, governance_data, recipients)
+                logger.info(f"Creating newsletter (test mode: {test_mode})...")
+                newsletter_path = self.create_newsletter(forum_data, governance_data, test_mode=test_mode)
                 if newsletter_path:
                     results["newsletter"] = newsletter_path
-                    logger.info(f"Newsletter created successfully: {newsletter_path}")
+                    logger.info(f"Newsletter created and sent successfully.")
             except Exception as e:
                 logger.error(f"Error creating or sending newsletter: {str(e)}")
                 traceback.print_exc()
+        elif send_newsletter and not (mailer_available and self.newsletter_mailer):
+            logger.warning("Newsletter mailer not available, skipping newsletter creation")
         
         return results
-
-
-def main():
-    """Main function of the application"""
-    parser = argparse.ArgumentParser(description="Polkadot Community Integrated Analyzer")
-    parser.add_argument("--output-dir", default="polkadot_analysis", help="Output directory for reports")
-    parser.add_argument("--rpc-endpoint", default="wss://rpc.polkadot.io", help="Polkadot RPC endpoint")
-    parser.add_argument("--subscan-key", help="Subscan API key")
-    parser.add_argument("--forum-only", action="store_true", help="Analyze only the forum")
-    parser.add_argument("--governance-only", action="store_true", help="Analyze only on-chain governance")
-    parser.add_argument("--send-newsletter", action="store_true", help="Send newsletter with results")
-    parser.add_argument("--recipients", nargs='+', help="Newsletter recipients")
-    parser.add_argument("--website-dir", help="Directory for website output")
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode (detailed logs)")
-    
-    args = parser.parse_args()
-    
-    # Configure log level based on arguments
-    if args.debug:
-        logger.setLevel(logging.DEBUG)
-        logger.debug("Debug mode enabled")
-    
-    # Validate arguments
-    if args.send_newsletter and not args.recipients:
-        logger.warning("--send-newsletter option was specified, but no recipients were provided (--recipients)")
-    
-    try:
-        logger.info(f"Starting analyzer with RPC endpoint: {args.rpc_endpoint}")
-        
-        # Initialize the integrator
-        integration = PolkadotAnalyzerIntegration(
-            output_dir=args.output_dir,
-            rpc_endpoint=args.rpc_endpoint,
-            subscan_api_key=args.subscan_key,
-            website_dir=args.website_dir
-        )
-        
-        if args.forum_only:
-            # Analyze only the forum
-            try:
-                forum_data = integration.run_forum_analysis()
-                if forum_data:
-                    print(f"\nForum analysis completed. Report saved to: {args.output_dir}")
-                    return 0
-                else:
-                    logger.error("Forum analysis failed - no data returned")
-                    return 1
-            except Exception as e:
-                logger.error(f"Error during forum analysis: {str(e)}")
-                traceback.print_exc()
-                return 1
-            
-        elif args.governance_only:
-            # Analyze only governance
-            try:
-                governance_data = integration.run_governance_analysis()
-                if governance_data:
-                    print(f"\nGovernance analysis completed. Report saved to: {args.output_dir}/governance")
-                    return 0
-                else:
-                    logger.error("Governance analysis failed - no data returned")
-                    return 1
-            except Exception as e:
-                logger.error(f"Error during governance analysis: {str(e)}")
-                traceback.print_exc()
-                return 1
-            
-        else:
-            # Run complete analysis
-            try:
-                results = integration.run_complete_analysis(
-                    send_newsletter=args.send_newsletter,
-                    recipients=args.recipients
-                )
-                
-                if results:
-                    print("\n=== Polkadot Community Analysis Completed ===")
-                    for report_type, path in results.items():
-                        print(f"{report_type}: {path}")
-                    return 0
-                else:
-                    logger.error("Complete analysis failed - no results generated")
-                    return 1
-            except Exception as e:
-                logger.error(f"Error during complete analysis: {str(e)}")
-                traceback.print_exc()
-                return 1
-        
-    except KeyboardInterrupt:
-        logger.info("Analysis interrupted by user")
-        return 130  # Standard exit code for SIGINT
-    except Exception as e:
-        logger.error(f"Error during execution: {str(e)}")
-        traceback.print_exc()
-        return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
