@@ -1,0 +1,653 @@
+{
+  "summary": {
+    "timestamp": "2025-04-06 16:12:23",
+    "categories_analyzed": 6,
+    "topics_analyzed": 177,
+    "posts_analyzed": 889,
+    "users_active": 278,
+    "tags_found": 24
+  },
+  "hot_topics": [
+    {
+      "id": 7,
+      "title": "Welcome to the Polkadot Forum \ud83d\udc4b",
+      "views": 13578,
+      "posts_count": 10,
+      "last_posted_at": "2025-01-10T11:36:32.991Z",
+      "url": "https://forum.polkadot.network/t/7",
+      "relevance_score": 13628
+    },
+    {
+      "id": 3957,
+      "title": "Developer Experience must be our #1 Priority",
+      "views": 6493,
+      "posts_count": 54,
+      "last_posted_at": "2025-03-09T15:33:25.866Z",
+      "url": "https://forum.polkadot.network/t/3957",
+      "relevance_score": 6783.562793975811
+    },
+    {
+      "id": 7583,
+      "title": "Cross-Consensus Query Language (XCQ)",
+      "views": 2604,
+      "posts_count": 22,
+      "last_posted_at": "2025-03-31T05:39:45.331Z",
+      "url": "https://forum.polkadot.network/t/7583",
+      "relevance_score": 2950.653295970486
+    },
+    {
+      "id": 7021,
+      "title": "Polkadot Native Storage Updates",
+      "views": 1854,
+      "posts_count": 68,
+      "last_posted_at": "2025-03-28T15:30:15.588Z",
+      "url": "https://forum.polkadot.network/t/7021",
+      "relevance_score": 2404.9563983846065
+    },
+    {
+      "id": 8549,
+      "title": "Feedback needed: New Head Ambassador application requirement",
+      "views": 2048,
+      "posts_count": 57,
+      "last_posted_at": "2024-07-20T05:59:53.161Z",
+      "url": "https://forum.polkadot.network/t/8549",
+      "relevance_score": 2333
+    },
+    {
+      "id": 11129,
+      "title": "Asset Hub Migration 2025",
+      "views": 1919,
+      "posts_count": 22,
+      "last_posted_at": "2025-04-02T10:12:54.539Z",
+      "url": "https://forum.polkadot.network/t/11129",
+      "relevance_score": 2308.93684808125
+    },
+    {
+      "id": 9193,
+      "title": "Next Steps for the Ambassador Program",
+      "views": 1868,
+      "posts_count": 63,
+      "last_posted_at": "2024-10-10T11:43:31.971Z",
+      "url": "https://forum.polkadot.network/t/9193",
+      "relevance_score": 2183
+    },
+    {
+      "id": 10395,
+      "title": "Project Phoenix: The Fundamental Reform of the Polkadot Ambassador Programme",
+      "views": 1709,
+      "posts_count": 52,
+      "last_posted_at": "2024-12-05T19:05:28.519Z",
+      "url": "https://forum.polkadot.network/t/10395",
+      "relevance_score": 1969
+    },
+    {
+      "id": 2642,
+      "title": "Best Tools for Polkadot Taxes - Staking, Multi-Chain Portfolio, etc",
+      "views": 1758,
+      "posts_count": 10,
+      "last_posted_at": "2025-03-12T17:29:46.050Z",
+      "url": "https://forum.polkadot.network/t/2642",
+      "relevance_score": 1859.3706848444444
+    },
+    {
+      "id": 7231,
+      "title": "Head Ambassador Election Process - Discussion",
+      "views": 1481,
+      "posts_count": 29,
+      "last_posted_at": "2024-06-12T19:40:43.062Z",
+      "url": "https://forum.polkadot.network/t/7231",
+      "relevance_score": 1626
+    },
+    {
+      "id": 38,
+      "title": "Improving the substrate/ecosystem vulnerabilities disclosure",
+      "views": 1375,
+      "posts_count": 20,
+      "last_posted_at": "2024-04-15T07:26:09.734Z",
+      "url": "https://forum.polkadot.network/t/38",
+      "relevance_score": 1475
+    },
+    {
+      "id": 7055,
+      "title": "Solana Parachain",
+      "views": 1215,
+      "posts_count": 21,
+      "last_posted_at": "2025-03-13T02:08:51.626Z",
+      "url": "https://forum.polkadot.network/t/7055",
+      "relevance_score": 1374.9754985342593
+    },
+    {
+      "id": 12110,
+      "title": "Polkadot Growth Strategy",
+      "views": 952,
+      "posts_count": 23,
+      "last_posted_at": "2025-03-31T14:14:33.017Z",
+      "url": "https://forum.polkadot.network/t/12110",
+      "relevance_score": 1307.015009804514
+    },
+    {
+      "id": 109,
+      "title": "About the Ecosystem category",
+      "views": 1074,
+      "posts_count": 7,
+      "last_posted_at": "2024-07-02T22:58:04.089Z",
+      "url": "https://forum.polkadot.network/t/109",
+      "relevance_score": 1109
+    },
+    {
+      "id": 5605,
+      "title": "Decentralised Futures <> Phyken Network - Green RWA fractionalisation protocol, powered by Polkadot and Substrate Builders Program",
+      "views": 1028,
+      "posts_count": 13,
+      "last_posted_at": "2024-01-19T10:18:32.694Z",
+      "url": "https://forum.polkadot.network/t/5605",
+      "relevance_score": 1093
+    },
+    {
+      "id": 11671,
+      "title": "Time to say goodbye to Decentralized Voices",
+      "views": 885,
+      "posts_count": 18,
+      "last_posted_at": "2025-03-15T04:35:12.266Z",
+      "url": "https://forum.polkadot.network/t/11671",
+      "relevance_score": 1066.8005531101853
+    },
+    {
+      "id": 9788,
+      "title": "Polkadot Developers",
+      "views": 663,
+      "posts_count": 19,
+      "last_posted_at": "2025-03-28T08:58:01.381Z",
+      "url": "https://forum.polkadot.network/t/9788",
+      "relevance_score": 965.8169038930555
+    },
+    {
+      "id": 10237,
+      "title": "The voice of the community for choosing Head Ambassadors",
+      "views": 756,
+      "posts_count": 27,
+      "last_posted_at": "2024-10-07T13:19:08.113Z",
+      "url": "https://forum.polkadot.network/t/10237",
+      "relevance_score": 891
+    },
+    {
+      "id": 6479,
+      "title": "Ocelloids XCM Tracking Demos: Tracking App + DEX App Integration",
+      "views": 800,
+      "posts_count": 8,
+      "last_posted_at": "2025-02-10T11:26:21.130Z",
+      "url": "https://forum.polkadot.network/t/6479",
+      "relevance_score": 840
+    },
+    {
+      "id": 18,
+      "title": "About the Tech Talk category",
+      "views": 825,
+      "posts_count": 2,
+      "last_posted_at": "2023-10-19T06:26:05.669Z",
+      "url": "https://forum.polkadot.network/t/18",
+      "relevance_score": 835
+    }
+  ],
+  "trending_keywords": [
+    [
+      "polkadot",
+      1722
+    ],
+    [
+      "ecosystem",
+      534
+    ],
+    [
+      "would",
+      512
+    ],
+    [
+      "community",
+      504
+    ],
+    [
+      "program",
+      400
+    ],
+    [
+      "chain",
+      352
+    ],
+    [
+      "ambassador",
+      350
+    ],
+    [
+      "support",
+      287
+    ],
+    [
+      "ambassadors",
+      284
+    ],
+    [
+      "could",
+      250
+    ],
+    [
+      "people",
+      242
+    ],
+    [
+      "think",
+      231
+    ],
+    [
+      "proposal",
+      200
+    ],
+    [
+      "governance",
+      193
+    ],
+    [
+      "network",
+      193
+    ],
+    [
+      "web3",
+      189
+    ],
+    [
+      "members",
+      183
+    ],
+    [
+      "first",
+      179
+    ],
+    [
+      "opengov",
+      169
+    ],
+    [
+      "voting",
+      166
+    ],
+    [
+      "parachain",
+      164
+    ],
+    [
+      "based",
+      161
+    ],
+    [
+      "projects",
+      158
+    ],
+    [
+      "kusama",
+      150
+    ],
+    [
+      "public",
+      150
+    ],
+    [
+      "users",
+      149
+    ],
+    [
+      "developers",
+      148
+    ],
+    [
+      "blockchain",
+      147
+    ],
+    [
+      "process",
+      144
+    ],
+    [
+      "working",
+      143
+    ],
+    [
+      "development",
+      137
+    ],
+    [
+      "treasury",
+      137
+    ],
+    [
+      "forum",
+      136
+    ],
+    [
+      "teams",
+      136
+    ],
+    [
+      "feedback",
+      135
+    ],
+    [
+      "since",
+      135
+    ],
+    [
+      "decentralized",
+      135
+    ],
+    [
+      "build",
+      133
+    ],
+    [
+      "future",
+      133
+    ],
+    [
+      "proposals",
+      133
+    ],
+    [
+      "collective",
+      131
+    ],
+    [
+      "parachains",
+      127
+    ],
+    [
+      "still",
+      127
+    ],
+    [
+      "substrate",
+      127
+    ],
+    [
+      "system",
+      126
+    ],
+    [
+      "already",
+      125
+    ],
+    [
+      "something",
+      124
+    ],
+    [
+      "bounty",
+      122
+    ],
+    [
+      "project",
+      121
+    ],
+    [
+      "experience",
+      121
+    ]
+  ],
+  "influential_users": [
+    {
+      "username": "mister_cole",
+      "post_count": 36,
+      "mentions": 9,
+      "influence_score": 63
+    },
+    {
+      "username": "alice_und_bob",
+      "post_count": 20,
+      "mentions": 13,
+      "influence_score": 59
+    },
+    {
+      "username": "Max",
+      "post_count": 31,
+      "mentions": 0,
+      "influence_score": 31
+    },
+    {
+      "username": "shawntabrizi",
+      "post_count": 17,
+      "mentions": 4,
+      "influence_score": 29
+    },
+    {
+      "username": "bkchr",
+      "post_count": 11,
+      "mentions": 3,
+      "influence_score": 20
+    },
+    {
+      "username": "replghost",
+      "post_count": 5,
+      "mentions": 5,
+      "influence_score": 20
+    },
+    {
+      "username": "albertov19",
+      "post_count": 4,
+      "mentions": 5,
+      "influence_score": 19
+    },
+    {
+      "username": "xlc",
+      "post_count": 15,
+      "mentions": 1,
+      "influence_score": 18
+    },
+    {
+      "username": "Lucy",
+      "post_count": 15,
+      "mentions": 1,
+      "influence_score": 18
+    },
+    {
+      "username": "six",
+      "post_count": 14,
+      "mentions": 1,
+      "influence_score": 17
+    },
+    {
+      "username": "bLd",
+      "post_count": 5,
+      "mentions": 4,
+      "influence_score": 17
+    },
+    {
+      "username": "leonardocustodio",
+      "post_count": 17,
+      "mentions": 0,
+      "influence_score": 17
+    },
+    {
+      "username": "HopeClary",
+      "post_count": 16,
+      "mentions": 0,
+      "influence_score": 16
+    },
+    {
+      "username": "nico_a",
+      "post_count": 1,
+      "mentions": 5,
+      "influence_score": 16
+    },
+    {
+      "username": "Karim",
+      "post_count": 6,
+      "mentions": 3,
+      "influence_score": 15
+    },
+    {
+      "username": "brenzi",
+      "post_count": 12,
+      "mentions": 1,
+      "influence_score": 15
+    },
+    {
+      "username": "somedude",
+      "post_count": 11,
+      "mentions": 1,
+      "influence_score": 14
+    },
+    {
+      "username": "aesmonty",
+      "post_count": 5,
+      "mentions": 3,
+      "influence_score": 14
+    },
+    {
+      "username": "Birdo",
+      "post_count": 7,
+      "mentions": 2,
+      "influence_score": 13
+    },
+    {
+      "username": "ChrawnnaCorp",
+      "post_count": 7,
+      "mentions": 2,
+      "influence_score": 13
+    }
+  ],
+  "category_activity": [
+    {
+      "id": 5,
+      "name": "Polkadot Forum Meta",
+      "topic_count": 30,
+      "total_posts": 123,
+      "total_views": 23016,
+      "avg_posts_per_topic": 4.1,
+      "avg_views_per_topic": 767.2,
+      "engagement_score": 2424.6
+    },
+    {
+      "id": 30,
+      "name": "Ambassador Programme",
+      "topic_count": 27,
+      "total_posts": 342,
+      "total_views": 12371,
+      "avg_posts_per_topic": 12.67,
+      "avg_views_per_topic": 458.19,
+      "engagement_score": 1579.1000000000001
+    },
+    {
+      "id": 6,
+      "name": "Tech Talk",
+      "topic_count": 30,
+      "total_posts": 262,
+      "total_views": 13086,
+      "avg_posts_per_topic": 8.73,
+      "avg_views_per_topic": 436.2,
+      "engagement_score": 1570.6000000000001
+    },
+    {
+      "id": 11,
+      "name": "Governance",
+      "topic_count": 30,
+      "total_posts": 217,
+      "total_views": 12990,
+      "avg_posts_per_topic": 7.23,
+      "avg_views_per_topic": 433.0,
+      "engagement_score": 1516.0
+    },
+    {
+      "id": 24,
+      "name": "Ecosystem",
+      "topic_count": 30,
+      "total_posts": 141,
+      "total_views": 7342,
+      "avg_posts_per_topic": 4.7,
+      "avg_views_per_topic": 244.73,
+      "engagement_score": 875.2
+    },
+    {
+      "id": 1,
+      "name": "Miscellaneous",
+      "topic_count": 30,
+      "total_posts": 166,
+      "total_views": 6240,
+      "avg_posts_per_topic": 5.53,
+      "avg_views_per_topic": 208.0,
+      "engagement_score": 790.0
+    }
+  ],
+  "governance": {
+    "proposal_count": 6,
+    "proposals": [
+      {
+        "id": 9456,
+        "title": "Proposal to induct Vikk to Senior Ambassador",
+        "created_at": "2024-08-02T13:23:20.599Z",
+        "views": 279,
+        "posts_count": 24,
+        "url": "https://forum.polkadot.network/t/9456"
+      },
+      {
+        "id": 12175,
+        "title": "Deploy idle Treasury Capital into DOT, vDOT liquidity; buy BTC, ETH; mint HOLLAR",
+        "created_at": "2025-03-20T13:16:57.947Z",
+        "views": 285,
+        "posts_count": 12,
+        "url": "https://forum.polkadot.network/t/12175"
+      },
+      {
+        "id": 11831,
+        "title": "How to limit altering proposals after they are posted?",
+        "created_at": "2025-02-21T11:42:42.697Z",
+        "views": 171,
+        "posts_count": 11,
+        "url": "https://forum.polkadot.network/t/11831"
+      },
+      {
+        "id": 3422,
+        "title": "A proposal for substrate/wallet connect logins on Discourse",
+        "created_at": "2023-07-14T18:23:31.999Z",
+        "views": 595,
+        "posts_count": 4,
+        "url": "https://forum.polkadot.network/t/3422"
+      },
+      {
+        "id": 7489,
+        "title": "Proposal: Re-name Polkadot to JAM",
+        "created_at": "2024-04-19T13:42:07.839Z",
+        "views": 503,
+        "posts_count": 2,
+        "url": "https://forum.polkadot.network/t/7489"
+      },
+      {
+        "id": 43,
+        "title": "About the Governance category",
+        "created_at": "2022-08-15T10:24:59.891Z",
+        "views": 682,
+        "posts_count": 1,
+        "url": "https://forum.polkadot.network/t/43"
+      }
+    ]
+  },
+  "top_tags": {
+    "decentralized-voices": 10,
+    "ux": 7,
+    "decentralized-future": 6,
+    "ambassador-programme": 5,
+    "parachain-profile": 4,
+    "validators": 3,
+    "security": 2,
+    "xcm": 2,
+    "infrastructure": 2,
+    "community": 2,
+    "governance": 2,
+    "treasury": 2,
+    "ecosystem-grants": 1,
+    "faq": 1,
+    "treasury-proposal": 1,
+    "staking": 1,
+    "node": 1,
+    "kusama": 1,
+    "bridge": 1,
+    "ethereum": 1
+  }
+}

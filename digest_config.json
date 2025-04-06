@@ -1,0 +1,17 @@
+{
+  "analysis": {
+    "max_categories": 100,
+    "max_topics_per_category": 1000,
+    "max_topics_details": 1000,
+    "request_delay": 3.0
+  },
+  "mailing": {
+    "frequency": "daily",
+    "send_hour": 8,
+    "send_day": 0,
+    "send_date": 1,
+    "test_mode": true
+  },
+  "output_directory": "polkadot_digest_output",
+  "last_run": "2025-04-06 16:13:37"
+}

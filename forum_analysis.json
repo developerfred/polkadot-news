@@ -1,0 +1,78 @@
+{
+  "summary": {
+    "analysis_timestamp": "2025-04-06 14:42:59",
+    "total_categories": 6,
+    "total_topics_analyzed": 147,
+    "total_posts_analyzed": 72,
+    "total_users": 25,
+    "average_post_length": 1421.36
+  },
+  "top_users": [
+    {
+      "username": "stemchenko",
+      "post_count": 12
+    },
+    {
+      "username": "HopeClary",
+      "post_count": 9
+    },
+    {
+      "username": "xlc",
+      "post_count": 7
+    },
+    {
+      "username": "implabinash",
+      "post_count": 6
+    },
+    {
+      "username": "leonardocustodio",
+      "post_count": 5
+    },
+    {
+      "username": "jmg-duarte",
+      "post_count": 5
+    },
+    {
+      "username": "jsdw",
+      "post_count": 3
+    },
+    {
+      "username": "koute",
+      "post_count": 3
+    },
+    {
+      "username": "tymat",
+      "post_count": 2
+    },
+    {
+      "username": "francisco.aguirre",
+      "post_count": 2
+    }
+  ],
+  "top_categories": [
+    {
+      "name": "Tech Talk",
+      "topic_count": 30
+    },
+    {
+      "name": "Governance",
+      "topic_count": 30
+    },
+    {
+      "name": "Ecosystem",
+      "topic_count": 30
+    },
+    {
+      "name": "Miscellaneous",
+      "topic_count": 30
+    },
+    {
+      "name": "Ambassador Programme",
+      "topic_count": 27
+    },
+    {
+      "name": "Polkadot Forum Meta",
+      "topic_count": 0
+    }
+  ]
+}
