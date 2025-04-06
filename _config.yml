@@ -1,0 +1,9 @@
+theme: jekyll-theme-minimal
+title: Polkadot Community Analysis
+description: Daily analysis of Polkadot community forum and on-chain governance
+exclude:
+  - node_modules/
+  - js_scripts/
+  - package.json
+  - package-lock.json
+  - "*.log"

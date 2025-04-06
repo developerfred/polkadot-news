@@ -34,7 +34,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install numpy pandas matplotlib seaborn nltk wordcloud
           pip install -e .
+
+      - name: Download NLTK data
+        run: |
+          python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
 
       - name: Install Node.js dependencies
         run: |
@@ -44,13 +49,20 @@ jobs:
         run: |
           mkdir -p docs/reports
           mkdir -p docs/newsletters
-          touch docs/.nojekyll
-          # Create basic index files if they don't exist
-          if [ ! -f docs/_config.yml ]; then
-            echo "theme: jekyll-theme-minimal" > docs/_config.yml
-            echo "title: Polkadot Community Analysis" >> docs/_config.yml
-            echo "description: Daily analysis of Polkadot community forum and on-chain governance" >> docs/_config.yml
-          fi
+          touch docs/.nojekyll  # Important: Add this to disable Jekyll processing
+          
+          # Create basic Jekyll configuration
+          cat > docs/_config.yml << EOL
+theme: jekyll-theme-minimal
+title: Polkadot Community Analysis
+description: Daily analysis of Polkadot community forum and on-chain governance
+exclude:
+  - node_modules/
+  - js_scripts/
+  - package.json
+  - package-lock.json
+  - "*.log"
+EOL
 
       - name: Run Polkadot community analysis
         env:
