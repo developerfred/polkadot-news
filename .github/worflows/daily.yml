@@ -140,6 +140,27 @@ EOL
         with:
           path: 'docs'
 
+      - name: Copy newsletters to GitHub Pages directory
+        run: |
+          echo "Copying newsletters to GitHub Pages directory..."          
+          mkdir -p docs/newsletters
+          
+          
+          cp -v polkadot_digest_output/*.html docs/newsletters/ || echo "Nenhum arquivo HTML encontrado"
+          
+          
+          latest=$(ls -t polkadot_digest_output/newsletter_*.html 2>/dev/null | head -1 || ls -t polkadot_digest_output/*.html 2>/dev/null | head -1)
+          if [ -n "$latest" ]; then
+            echo "Newsletter mais recente encontrada: $latest"
+            cp -v "$latest" docs/newsletters/newsletter_latest.html
+          else
+            echo "Nenhuma newsletter encontrada na pasta de saída"
+          fi
+          
+          
+          echo "Conteúdo de docs/newsletters:"
+          ls -la docs/newsletters/
+
       - name: 
         run: |
           echo "Checking newsletter files..."
